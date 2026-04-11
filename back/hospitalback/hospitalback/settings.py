@@ -28,18 +28,57 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-# Application definition
+AUTH_USER_MODEL = 'accounts.User'
 
 INSTALLED_APPS = [
+    'corsheaders',
+    'accounts',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'patients',
+    'appointments',
+    'orders',
+    'services',
+    'pharmacy',
+    'admin_panel',
+    'billing',
+    'nursing',
+    'radiology',
+    'laboratory',
+    'encounters',
+    'prescriptions',
+    'notifications',
+    'core',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist', 
+
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+}
+CORS_ALLOW_ALL_ORIGINS = True
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # access token valid for 60 minutes
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # refresh token valid for 1 day
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
