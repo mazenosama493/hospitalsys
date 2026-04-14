@@ -1,25 +1,27 @@
 # users/serializers.py
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from .models import User, Role, Permission
+from .models import User
 from core.models import Department
+from django.contrib.auth.models import Group, Permission
 
 class LoginSerializer(TokenObtainPairSerializer):
-    role = serializers.CharField(write_only=True)
+    group = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        role_name = attrs.pop('role', None)
-        if not role_name:
-            raise serializers.ValidationError({"role": "This field is required."})
+        group_name = attrs.pop('group', None)
+
+        if not group_name:
+            raise serializers.ValidationError({"group": "This field is required."})
 
         data = super().validate(attrs)
         user = self.user
 
-        if not user.role or user.role.name != role_name:
+        if not user.groups.filter(name=group_name).exists():
             raise serializers.ValidationError({
-                "role": f"User does not have the required role '{role_name}'."
+                "group": f"User does not belong to '{group_name}' group."
             })
-        
+
         if not user.is_active:
             raise serializers.ValidationError({
                 "account": "This account is inactive."
@@ -31,20 +33,41 @@ class LoginSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, min_length=8)
     email = serializers.EmailField(required=True)
-    role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), required=True)
-    department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), required=False, allow_null=True)
+
+
+    groups = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.all(),
+        many=True,
+        required=True
+    )
+
+    department = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
     department_name = serializers.CharField(source='department.name', read_only=True)
     last_login = serializers.DateTimeField(read_only=True)
 
-
     class Meta:
         model = User
-        fields = ['id', 'email', 'role', 'department', 'department_name', 'is_active', 'first_name', 'last_name', 'password', 'last_login']
+        fields = [
+            'id',
+            'email',
+            'groups',
+            'department',
+            'department_name',
+            'is_active',
+            'first_name',
+            'last_name',
+            'password',
+            'last_login',
+        ]
         read_only_fields = ['id', 'last_login']
 
     def validate_email(self, value):
         if self.instance:
-            # For updates, exclude current instance
             if User.objects.exclude(pk=self.instance.pk).filter(email=value).exists():
                 raise serializers.ValidationError("Email is already in use.")
         else:
@@ -52,44 +75,60 @@ class UserSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Email is already in use.")
         return value
 
-    def validate_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError("Password must be at least 8 characters long.")
-        return value
-
     def create(self, validated_data):
+        groups = validated_data.pop('groups', [])
         password = validated_data.pop('password')
+
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+
+        user.groups.set(groups)
+
         return user
 
     def update(self, instance, validated_data):
+        groups = validated_data.pop('groups', None)
         password = validated_data.pop('password', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
         if password:
             instance.set_password(password)
+
         instance.save()
+
+        if groups is not None:
+            instance.groups.set(groups)
+
         return instance
     
-
-
 
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permission
-        fields = ['id', 'name', 'code']
+        fields = ['id', 'name', 'codename']
+    
 
-class RoleSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True)
+class GroupSerializer(serializers.ModelSerializer):
+    permission_details = PermissionSerializer(
+        source='permissions',
+        many=True,
+        read_only=True
+    )
 
     class Meta:
-        model = Role
-        fields = ['id', 'name', 'display_name', 'permissions']
+        model = Group
+        fields = ['id', 'name', 'permission_details']
+    
 
 
-class RoleNameSerializer(serializers.ModelSerializer):
+class GroupListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Role
-        fields = ['name']
+        model = Group
+        fields = ['id', 'name']
+
+
+
+

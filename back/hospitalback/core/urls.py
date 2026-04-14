@@ -1,14 +1,24 @@
-from django.urls import path
-from core.views import BedStatsView, DepartmentStatsView, DepartmentListView, DepartmentViewSet, WardViewSet, RoomViewSet,BedViewSet
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from .views import (
+    DepartmentViewSet,
+    WardViewSet,
+    RoomViewSet,
+    BedViewSet,
+    BedStatsView,
+    DepartmentCountView,
+    DepartmentDashboardView
+)
+
 router = DefaultRouter()
-router.register(r'departments', DepartmentViewSet, basename='department')
-router.register(r'wards', WardViewSet, basename='wards')
-router.register(r'rooms', RoomViewSet, basename='rooms')
-router.register(r'beds', BedViewSet, basename='beds')
+router.register(r'departments', DepartmentViewSet)
+router.register(r'wards', WardViewSet)
+router.register(r'rooms', RoomViewSet)
+router.register(r'beds', BedViewSet)
+
 urlpatterns = [
-    path('beds/stats/', BedStatsView.as_view(), name='bed-stats'),
-    path('departments/stats/', DepartmentStatsView.as_view(), name='department-stats'),
-    path('departments/view/', DepartmentListView.as_view(), name='department-list'),
+    path('', include(router.urls)),
+    path('beds-stats/', BedStatsView.as_view(), name='bed-stats'),
+    path('departments-count/', DepartmentCountView.as_view(), name='departments-count'),
+    path('departments-dashboard/', DepartmentDashboardView.as_view(), name='departments-dashboard'),
 ]
-urlpatterns += router.urls

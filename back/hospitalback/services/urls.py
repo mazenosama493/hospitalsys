@@ -1,14 +1,28 @@
-# services/urls.py
-from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import ServiceTypeViewSet, ServiceViewSet, ServiceTypeCountView
+from django.urls import path, include
+from .views import (
+    LabCategoryViewSet,
+    LabTestViewSet,
+    RadiologyViewSet,
+    ServiceCategoryViewSet,
+    ServiceViewSet,
+    ActiveServicesStatsView
+)
 
 router = DefaultRouter()
-router.register('service-types', ServiceTypeViewSet)
-router.register('services', ServiceViewSet)
+
+# Lab
+router.register(r'lab-categories', LabCategoryViewSet)
+router.register(r'lab-tests', LabTestViewSet)
+
+# Radiology
+router.register(r'radiology', RadiologyViewSet)
+
+# Services
+router.register(r'service-categories', ServiceCategoryViewSet)
+router.register(r'services', ServiceViewSet)
 
 urlpatterns = [
-    path('service-types-count/', ServiceTypeCountView.as_view()),
+    path('', include(router.urls)),
+     path('dashboard/active-services/', ActiveServicesStatsView.as_view(), name='active-services-stats'),
 ]
-
-urlpatterns += router.urls

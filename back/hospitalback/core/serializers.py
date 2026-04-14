@@ -1,36 +1,38 @@
 from rest_framework import serializers
-from core.models import Department, Bed, Ward, Room
+from .models import Department, Ward, Room, Bed
+
 
 class DepartmentSerializer(serializers.ModelSerializer):
     head_name = serializers.CharField(source='head.get_full_name', read_only=True)
 
     class Meta:
         model = Department
-        fields = ['id', 'name', 'sub_name', 'types', 'status', 'phone', 'location', 'head', 'head_name']
-        read_only_fields = ['id', 'head_name']
+        fields = [
+            'id',
+            'name',
+            'head',
+            'head_name',
+            'phone',
+            'location',
+            'types',
+            'status',
+            'sub_name',
+        ]
 
-class BedListSerializer(serializers.ModelSerializer):
-    room = serializers.CharField(source='room.name', read_only=True)
-    ward = serializers.CharField(source='room.ward.name', read_only=True)
-    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
-
-    class Meta:
-        model = Bed
-        fields = ['id', 'number', 'status', 'room', 'ward', 'patient_name']
-
-    
 
 class WardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ward
-        fields = ['id', 'name', 'department']
-
-
+        fields = '__all__'
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    ward_name = serializers.CharField(source='ward.name', read_only=True)
-
     class Meta:
         model = Room
-        fields = ['id', 'name', 'ward', 'ward_name']
+        fields = '__all__'
+
+
+class BedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bed
+        fields = '__all__'
